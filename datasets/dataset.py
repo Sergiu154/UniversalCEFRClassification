@@ -10,6 +10,8 @@ import torch
 import pickle
 import os
 import string
+from transformers import AutoModel, AutoTokenizer
+
 
 
 DS_CACHE = {}
@@ -194,6 +196,27 @@ def create_ngrams(docs, vectorizer, n_gram_type="word"):
     return feature_vectors.toarray(), vectorizer
 
 
+def get_bert_embeddings(docs):
+
+    
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-german-cased")
+    model = AutoModel.from_pretrained("bert-base-german-cased").to('cuda:0')
+    features = torch.empty((0, 768)).to('cuda:0')
+
+    with torch.no_grad():
+
+        for doc in docs:
+
+            out = tokenizer(doc["word"])
+            input_ids = torch.tensor(out['input_ids']).to('cuda:0').unsqueeze(0)
+            att_mask = torch.tensor(out['attention_mask']).to('cuda:0').unsqueeze(0)
+            hidden_states, pooled_output = model(input_ids= input_ids, attention_mask = att_mask, return_dict=False)
+
+            # features = torch.cat([features, pooled_output], dim =0)
+            features = torch.cat([features,hidden_states.mean(dim=1)], dim =0)
+
+    return features.cpu().numpy()
+
 def compress_features(language, feat_type, features, labels):
 
     imp_to_lang = {"it": "italian", "de": "german", "cs": "czech"}
@@ -227,6 +250,7 @@ def create_feature_vector2(
     domain_features=True,
     doc_len=False,
     language_flag=False,
+    bert_embeddings=False
 ):
 
     features = np.empty((len(docs), 0))
@@ -243,6 +267,10 @@ def create_feature_vector2(
 
     labels = [label_to_indx[label] for label in labels]
     labels = np.array(labels)
+
+    if bert_embeddings:
+        features = get_bert_embeddings(docs)
+        vectorizer = None
 
     if word_ngrams:
 

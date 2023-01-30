@@ -28,10 +28,10 @@ def train_model(language, features_options, test_language=None):
     k_fold = StratifiedKFold(10, shuffle=True, random_state=seed)
 
     classifiers = [
-        RandomForestClassifier(
-            n_estimators=300, class_weight="balanced", random_state=seed
-        ),
-        LinearSVC(class_weight="balanced", random_state=seed),
+        # RandomForestClassifier(
+            # n_estimators=300, class_weight="balanced", random_state=seed
+        # ),
+        # LinearSVC(class_weight="balanced", random_state=seed),
         LogisticRegression(class_weight="balanced", random_state=seed, max_iter=10000)
     ]
 
@@ -77,6 +77,7 @@ if __name__ == '__main__':
     
     option_scores = {}
     for option in [
+        # "bert_embeddings",
         "word_ngrams",
         "pos_ngrams",
         "dependency_ngrams",
@@ -87,7 +88,7 @@ if __name__ == '__main__':
 
         print(option)
 
-        for with_domain in [True, False]:
+        for with_domain in [False, False]:
             features_options = {
                 "word_ngrams": False,
                 "pos_ngrams": False,
@@ -95,6 +96,7 @@ if __name__ == '__main__':
                 "domain_features": False,
                 "doc_len": False,
                 "language_flag": False,
+                "bert_embeddings": False
             }
 
             features_options[option] = True
@@ -103,11 +105,10 @@ if __name__ == '__main__':
                 features_options["domain_features"] = True
 
             # f1_scores, cross_vals = train_model('german', features_options, test_language='italian')
-            # f1_scores, cross_vals = train_model(
-                # "german", features_options, test_language="czech"
-            # )
+            f1_scores, cross_vals = train_model('german', features_options, test_language='czech')
 
-            f1_scores, cross_vals = train_model('czech', features_options)
+
+            # f1_scores, cross_vals = train_model('czech', features_options)
             # f1_scores, cross_vals = train_model('all', features_options)
             # f1_scores, cross_vals = train_model('italian', features_options)
             # f1_scores, cross_vals = train_model('german', features_options)
@@ -116,8 +117,10 @@ if __name__ == '__main__':
             option_new = option if not with_domain else f"{option}_domain"
             option_scores[option_new] = {"f1": f1_scores, "cv": cross_vals}
 
+    import pdb; pdb.set_trace()
+
     import pickle
-    with open('cz_results.pickle', 'wb') as handle:
+    with open('cross_lang_it_results.pickle', 'wb') as handle:
         pickle.dump(option_scores, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     import pdb; pdb.set_trace()
@@ -143,6 +146,7 @@ if __name__ == '__main__':
     #  [0  22  89  54 0]
     #  [0  2  20  59 0]]
     # 0.662235609728027
+
     # dependency_ngrams
     # [[0 165  22   1 0]
     #  [0 82  66  17 0]
